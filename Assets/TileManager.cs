@@ -53,75 +53,39 @@ public class TileManager : MonoBehaviour
 
     }
 
-    public void ResetBoard()
-    {
-        foreach (List<GameObject> col in tileList)
-        {
-            foreach (GameObject cell in col)
-            {
-                cell.GetComponent<TileScript>().toDead();
-            }
-        }
-    }
-
-
-    public void StartSimulation()
-    {
-        isPlaying = !isPlaying;
-        if (isPlaying)
-        {
-            InvokeRepeating("UpdateSimulation", 0.0f, simulationSpeed);
-            playButton.GetComponent<Image>().color = Color.green;
-            playButton.transform.GetChild(0).GetComponent<Text>().text = "Stop";
-            stepButton.enabled = false;
-            clearButton.enabled = false;
-        }
-        else
-        {
-            CancelInvoke("UpdateSimulation");
-            playButton.GetComponent<Image>().color = Color.red;
-            playButton.transform.GetChild(0).GetComponent<Text>().text = "Start";
-            stepButton.enabled = true;
-            clearButton.enabled = true;
-        }
-    }
-
-    public void UpdateSpeed(string speed)
-    {
-        if (isPlaying)
-        {
-            CancelInvoke("UpdateSimulation");
-            simulationSpeed = float.Parse(speed);
-            InvokeRepeating("UpdateSimulation", 0.0f, simulationSpeed);
-        }
-        else
-        {
-            simulationSpeed = float.Parse(speed);
-        }
-
-
-    }
-
     public void UpdateSimulation()
     {
 
         List<Vector2Int> deathList = new List<Vector2Int>();
         List<Vector2Int> lifeList = new List<Vector2Int>();
-        int neighborsAlive;
+        Vector2Int[] offsets =
+        {
+            new Vector2Int(-1, -1),
+            new Vector2Int(-1, 0),
+            new Vector2Int(-1, 1),
+            new Vector2Int(0, -1),
+            new Vector2Int(0, 1),
+            new Vector2Int(1, -1),
+            new Vector2Int(1, 0),
+            new Vector2Int(1, 1),
+        };
+       int neighborsAlive;
         for (int x = 1; x < tilemapWidth - 1; x++)
         {
             for (int y = 1; y < tilemapHeight - 1; y++)
             {
                 neighborsAlive = 0;
 
-                int[] xOffsets = { -1, -1, -1, 0, 0, 1, 1, 1 };
-                int[] yOffsets = { -1, 0, 1, -1, 1, -1, 0, 1 };
+
                 for (int i = 0; i < 8; i++)
                 {
-                    if (tileList[x + xOffsets[i]][y + yOffsets[i]].GetComponent<TileScript>().isAlive)
+
+                    Vector3 currentTilePos = tileList[x][y].transform.position;
+                    Vector2 currentTilePos2D = new Vector2(currentTilePos.x, currentTilePos.y);
+                    RaycastHit2D hit = Physics2D.Raycast(currentTilePos2D + offsets[i], Vector2.zero);
+                    if (hit.collider.gameObject.GetComponent<TileScript>().isAlive)
                     {
                         neighborsAlive++;
-
                     }
                 }
 
@@ -147,5 +111,54 @@ public class TileManager : MonoBehaviour
             tileList[cell.x][cell.y].GetComponent<TileScript>().toAlive();
         }
     }
+    public void StartSimulation()
+    {
+        isPlaying = !isPlaying;
+        if (isPlaying)
+        {
+            InvokeRepeating("UpdateSimulation", 0.0f, simulationSpeed);
+            playButton.GetComponent<Image>().color = Color.green;
+            playButton.transform.GetChild(0).GetComponent<Text>().text = "Stop";
+            stepButton.enabled = false;
+            clearButton.enabled = false;
+        }
+        else
+        {
+            CancelInvoke("UpdateSimulation");
+            playButton.GetComponent<Image>().color = Color.red;
+            playButton.transform.GetChild(0).GetComponent<Text>().text = "Start";
+            stepButton.enabled = true;
+            clearButton.enabled = true;
+        }
+    }
+
+    public void ResetBoard()
+    {
+        foreach (List<GameObject> col in tileList)
+        {
+            foreach (GameObject cell in col)
+            {
+                cell.GetComponent<TileScript>().toDead();
+            }
+        }
+    }
+
+    public void UpdateSpeed(string speed)
+    {
+        if (isPlaying)
+        {
+            CancelInvoke("UpdateSimulation");
+            simulationSpeed = float.Parse(speed);
+            InvokeRepeating("UpdateSimulation", 0.0f, simulationSpeed);
+        }
+        else
+        {
+            simulationSpeed = float.Parse(speed);
+        }
+
+
+    }
+
+
 }
 
