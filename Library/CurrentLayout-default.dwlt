@@ -501,7 +501,7 @@ MonoBehaviour:
     m_LockTracker:
       m_IsLocked: 0
     m_CurrentSortingName: TransformSorting
-  m_WindowGUID: 0ff0819c6a2b84f4abcef6e46c8276f4
+  m_WindowGUID: 0405fb802c0ec894f8327052337c4824
 --- !u!114 &15
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -529,7 +529,7 @@ MonoBehaviour:
     height: 790
   m_ViewDataDictionary: {fileID: 0}
   m_ShowContextualTools: 0
-  m_WindowGUID: af8c9fb68effe7945a415009b9d44ea1
+  m_WindowGUID: 28b833a9f47601148ab1db1f3c110d65
   m_Gizmos: 1
   m_SceneIsLit: 1
   m_SceneLighting: 1

@@ -317,7 +317,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainCam: {fileID: 519420031}
-  scrollSpeed: 0.125
+  scrollSpeed: 0.02
+  calculatedScrollSpeed: 0
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0

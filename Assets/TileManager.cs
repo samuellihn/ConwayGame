@@ -14,6 +14,17 @@ public class TileManager : MonoBehaviour
     public Button clearButton;
     public GameObject playButton;
 
+    Vector2Int[] mooreNeighborhood = {
+        new Vector2Int(-1, -1),
+        new Vector2Int(-1, 0),
+        new Vector2Int(-1, 1),
+        new Vector2Int(0, -1),
+        new Vector2Int(0, 1),
+        new Vector2Int(1, -1),
+        new Vector2Int(1, 0),
+        new Vector2Int(1, 1),
+    };
+
     public int borderSize;
 
     private List<GameObject> tileList = new List<GameObject>();
@@ -51,7 +62,10 @@ public class TileManager : MonoBehaviour
                 Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                 Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
                 RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
-                onTileClick(hit.collider.gameObject);
+                if (hit.collider != null)
+                {
+                    onTileClick(hit.collider.gameObject);
+                }
             }
         }
 
@@ -63,15 +77,7 @@ public class TileManager : MonoBehaviour
 
     private void onTileClick(GameObject tile)
     {
-        if (tile.GetComponent<TileScript>().ChangeState())
-        {
-            aliveList.Add(tile);
-        }
-        else
-        {
-            aliveList.Remove(tile);
-        }
-        Debug.Log("" + aliveList.Count);
+        updateTrackedTiles(tile, tile.GetComponent<TileScript>().ChangeState());
     }
 
     public void GenerateNewTiles(Vector3 newCornerBL, Vector3 newCornerTR)
@@ -93,25 +99,55 @@ public class TileManager : MonoBehaviour
         }
     }
 
+    private void updateTrackedTiles(GameObject tile,bool isAddCommand)
+    {
+        if (isAddCommand)
+        {
+            if (!aliveList.Contains(tile))
+            {
+                aliveList.Add(tile);
+            }
+        }
+        else
+        {
+            aliveList.Remove(tile);
+        }
+    }
+
+    private void updateSearchList()
+    {
+        searchList.Clear();
+        foreach (GameObject tile in aliveList)
+        {
+            if (!searchList.Contains(tile))
+            {
+                searchList.Add(tile);
+            }
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 offset = new Vector3(mooreNeighborhood[i].x, mooreNeighborhood[i].y, 0);
+                RaycastHit2D hit = Physics2D.Raycast(tile.transform.position + offset, Vector2.zero);
+                if (hit.collider != null)
+                {
+                    if (!searchList.Contains(hit.collider.gameObject))
+                    {
+                        searchList.Add(hit.collider.gameObject);
+                    }
+                }
+
+            }
+        }
+    }
+
 
     public void UpdateSimulation()
     {
 
         List<GameObject> deathList = new List<GameObject>();
         List<GameObject> lifeList = new List<GameObject>();
-        Vector2Int[] offsets =
-        {
-            new Vector2Int(-1, -1),
-            new Vector2Int(-1, 0),
-            new Vector2Int(-1, 1),
-            new Vector2Int(0, -1),
-            new Vector2Int(0, 1),
-            new Vector2Int(1, -1),
-            new Vector2Int(1, 0),
-            new Vector2Int(1, 1),
-        };
-       int neighborsAlive;
-        foreach (GameObject currentTile in tileList)
+        int neighborsAlive;
+        updateSearchList();
+        foreach (GameObject currentTile in searchList)
         {
             neighborsAlive = 0;
 
@@ -120,7 +156,7 @@ public class TileManager : MonoBehaviour
 
                 Vector3 currentTilePos = currentTile.transform.position;
                 Vector2 currentTilePos2D = new Vector2(currentTilePos.x, currentTilePos.y);
-                RaycastHit2D hit = Physics2D.Raycast(currentTilePos2D + offsets[i], Vector2.zero);
+                RaycastHit2D hit = Physics2D.Raycast(currentTilePos2D + mooreNeighborhood[i], Vector2.zero);
                 if (hit.collider != null)
                 {
                     if (hit.collider.gameObject.GetComponent<TileScript>().isAlive)
@@ -139,18 +175,22 @@ public class TileManager : MonoBehaviour
                 lifeList.Add(currentTile);
             }
         }
-
+        
+        //Update the states with the lists of what to update
         foreach (GameObject cell in deathList)
         {
             cell.GetComponent<TileScript>().toDead();
-            aliveList.Remove(cell);
+            updateTrackedTiles(cell, false);
         }
 
         foreach (GameObject cell in lifeList)
         {
             cell.GetComponent<TileScript>().toAlive();
-            aliveList.Add(cell);
+            updateTrackedTiles(cell, true);
         }
+
+        Debug.Log(searchList.Count);
+        Debug.Log(aliveList.Count);
     }
     public void StartSimulation()
     {
@@ -175,11 +215,12 @@ public class TileManager : MonoBehaviour
 
     public void ResetBoard()
     {
-        foreach (GameObject cell in tileList)
+        foreach (GameObject cell in aliveList)
         {
             cell.GetComponent<TileScript>().toDead();
-            aliveList.Clear();
         }
+        aliveList.Clear();
+        searchList.Clear();
     }
 
     public void UpdateSpeed(string speed)
