@@ -14,7 +14,7 @@ public class TileScript : MonoBehaviour
         
     }
 
-    public void ChangeState()
+    public bool ChangeState()
     {
         isAlive = !isAlive;
         if (isAlive)
@@ -25,6 +25,7 @@ public class TileScript : MonoBehaviour
         {
             gameObject.GetComponent<SpriteRenderer>().sprite = deadSprite;
         }
+        return isAlive;
     }
 
     public void toAlive()

@@ -840,14 +840,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5eb64ecafa21fde448e12a6dc94efbbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mainCamera: {fileID: 519420031}
   rootTile: {fileID: 664394942}
   stepButton: {fileID: 1657008536}
   clearButton: {fileID: 1798397479}
   playButton: {fileID: 688188622}
+  borderSize: 10
   tilemapHeight: 81
   tilemapWidth: 81
-  simulationSpeed: 1
   parent: {fileID: 1074847868}
+  simulationSpeed: 1
 --- !u!4 &1074847868
 Transform:
   m_ObjectHideFlags: 0
@@ -856,7 +858,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1074847866}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.3367034, y: -3.0212765, z: -4.1038566}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 664394944}

@@ -7,57 +7,98 @@ using UnityEngine.UI;
 
 public class TileManager : MonoBehaviour
 {
+    public Camera mainCamera;
 
     public GameObject rootTile;
     public Button stepButton;
     public Button clearButton;
     public GameObject playButton;
 
+    public int borderSize;
+
+    private List<GameObject> tileList = new List<GameObject>();
+    private List<GameObject> aliveList = new List<GameObject>();
+    private List<GameObject> searchList = new List<GameObject>();
+
     public int tilemapHeight;
     public int tilemapWidth;
-    public float simulationSpeed;
     public Transform parent;
+
+    public float simulationSpeed;
     private bool isPlaying = false;
-    private List<List<GameObject>> tileList = new List<List<GameObject>>();
+
 
     // Start is called before the first frame update
     void Start()
     {
-        for (int x = 0; x < tilemapWidth; x++)
-        {
-
-            tileList.Add(new List<GameObject>());
-            for (int y = 0; y < tilemapHeight; y++)
-            {
-                tileList[x].Add(Instantiate(rootTile, new Vector3(x - Mathf.FloorToInt(tilemapHeight / 2.0f), y - Mathf.FloorToInt(tilemapWidth / 2.0f), 0), Quaternion.identity, parent));
-            }
-        }
         simulationSpeed = 1.0f;
 
+        Vector3 bottomLeft = mainCamera.ViewportToWorldPoint(new Vector3(0, 0, 0));
+        Vector3 topRight = mainCamera.ViewportToWorldPoint(new Vector3(1, 1, 0));
+
+         GenerateNewTiles(bottomLeft, topRight);
 
     }
 
     // Update is called once per frame
     void Update()
-    {   
-        
-        if (Input.GetMouseButtonDown(0)) {
+    {
+
+        if (Input.GetMouseButtonDown(0))
+        {
             if (!EventSystem.current.IsPointerOverGameObject())
             {
                 Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                 Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
                 RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
-                hit.collider.gameObject.GetComponent<TileScript>().ChangeState();
+                onTileClick(hit.collider.gameObject);
             }
         }
 
+        Vector3 bottomLeft = mainCamera.ViewportToWorldPoint(new Vector3(0, 0, 0));
+        Vector3 topRight = mainCamera.ViewportToWorldPoint(new Vector3(1, 1, 0));
+
+        GenerateNewTiles(bottomLeft, topRight);
     }
+
+    private void onTileClick(GameObject tile)
+    {
+        if (tile.GetComponent<TileScript>().ChangeState())
+        {
+            aliveList.Add(tile);
+        }
+        else
+        {
+            aliveList.Remove(tile);
+        }
+        Debug.Log("" + aliveList.Count);
+    }
+
+    public void GenerateNewTiles(Vector3 newCornerBL, Vector3 newCornerTR)
+    {
+        Vector2Int newBL = new Vector2Int(Mathf.RoundToInt(newCornerBL.x)-borderSize, Mathf.RoundToInt(newCornerBL.y)-borderSize);
+        Vector2Int newTR = new Vector2Int(Mathf.RoundToInt(newCornerTR.x)+borderSize, Mathf.RoundToInt(newCornerTR.y)+borderSize);
+        
+        for (int x = newBL.x; x <= newTR.x; x++)
+        {
+            for (int y = newBL.y; y <= newTR.y; y++)
+            {
+                RaycastHit2D hit = Physics2D.Raycast(new Vector2(x, y), Vector2.zero);
+                if (hit.collider == null)
+                {
+                    Vector3 tilePos = new Vector3(x, y, 0);
+                    tileList.Add(Instantiate(rootTile, tilePos, Quaternion.identity, parent));
+                }
+            }
+        }
+    }
+
 
     public void UpdateSimulation()
     {
 
-        List<Vector2Int> deathList = new List<Vector2Int>();
-        List<Vector2Int> lifeList = new List<Vector2Int>();
+        List<GameObject> deathList = new List<GameObject>();
+        List<GameObject> lifeList = new List<GameObject>();
         Vector2Int[] offsets =
         {
             new Vector2Int(-1, -1),
@@ -70,45 +111,45 @@ public class TileManager : MonoBehaviour
             new Vector2Int(1, 1),
         };
        int neighborsAlive;
-        for (int x = 1; x < tilemapWidth - 1; x++)
+        foreach (GameObject currentTile in tileList)
         {
-            for (int y = 1; y < tilemapHeight - 1; y++)
+            neighborsAlive = 0;
+
+            for (int i = 0; i < 8; i++)
             {
-                neighborsAlive = 0;
 
-
-                for (int i = 0; i < 8; i++)
+                Vector3 currentTilePos = currentTile.transform.position;
+                Vector2 currentTilePos2D = new Vector2(currentTilePos.x, currentTilePos.y);
+                RaycastHit2D hit = Physics2D.Raycast(currentTilePos2D + offsets[i], Vector2.zero);
+                if (hit.collider != null)
                 {
-
-                    Vector3 currentTilePos = tileList[x][y].transform.position;
-                    Vector2 currentTilePos2D = new Vector2(currentTilePos.x, currentTilePos.y);
-                    RaycastHit2D hit = Physics2D.Raycast(currentTilePos2D + offsets[i], Vector2.zero);
                     if (hit.collider.gameObject.GetComponent<TileScript>().isAlive)
                     {
                         neighborsAlive++;
                     }
                 }
+            }
 
-                if (neighborsAlive > 3 || neighborsAlive < 2)
-                {
-                    deathList.Add(new Vector2Int(x, y));
-                }
-                else if (neighborsAlive == 3)
-                {
-                    lifeList.Add(new Vector2Int(x, y));
-                }
-
+            if (neighborsAlive > 3 || neighborsAlive < 2)
+            {
+                deathList.Add(currentTile);
+            }
+            else if (neighborsAlive == 3)
+            {
+                lifeList.Add(currentTile);
             }
         }
 
-        foreach (Vector2Int cell in deathList)
+        foreach (GameObject cell in deathList)
         {
-            tileList[cell.x][cell.y].GetComponent<TileScript>().toDead();
+            cell.GetComponent<TileScript>().toDead();
+            aliveList.Remove(cell);
         }
 
-        foreach (Vector2Int cell in lifeList)
+        foreach (GameObject cell in lifeList)
         {
-            tileList[cell.x][cell.y].GetComponent<TileScript>().toAlive();
+            cell.GetComponent<TileScript>().toAlive();
+            aliveList.Add(cell);
         }
     }
     public void StartSimulation()
@@ -134,12 +175,10 @@ public class TileManager : MonoBehaviour
 
     public void ResetBoard()
     {
-        foreach (List<GameObject> col in tileList)
+        foreach (GameObject cell in tileList)
         {
-            foreach (GameObject cell in col)
-            {
-                cell.GetComponent<TileScript>().toDead();
-            }
+            cell.GetComponent<TileScript>().toDead();
+            aliveList.Clear();
         }
     }
 
